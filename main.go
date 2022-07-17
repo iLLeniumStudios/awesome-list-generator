@@ -2,21 +2,41 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/config"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/fetcher"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/generator"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 )
 
 var ConfigPath string
 var OutputPath string
+var Verbose bool
 
 func init() {
+	ParseFlags()
+	ConfigureLogger()
+}
+
+func ParseFlags() {
+	flag.BoolVar(&Verbose, "verbose", false, "Enable verbose logging")
+	flag.StringVar(&ConfigPath, "config", "config.yaml", "Path to config.yaml")
 	flag.StringVar(&ConfigPath, "config", "config.yaml", "Path to config.yaml")
 	flag.StringVar(&OutputPath, "output", "awesome.md", "Path to output markdown file")
 	flag.Parse()
+}
+
+func ConfigureLogger() {
+	log.SetFormatter(&log.TextFormatter{
+		ForceColors: true,
+	})
+
+	if Verbose {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
 }
 
 func GetConfig() (*config.Config, error) {
@@ -24,7 +44,6 @@ func GetConfig() (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(yFile))
 	var conf config.Config
 	err = yaml.Unmarshal(yFile, &conf)
 	if err != nil {

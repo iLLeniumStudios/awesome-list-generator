@@ -2,11 +2,11 @@ package fetcher
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/go-github/v45/github"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/config"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/models"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/utils"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"os"
 	"strings"
@@ -108,7 +108,7 @@ func (f *fetcher) Fetch() (models.AwesomeList, error) {
 		Users: []models.User{},
 	}
 	for _, user := range f.Config.Users {
-		fmt.Println("Fetching repos for user: " + user.Name)
+		log.Infoln("Fetching repos for user: " + user.Name)
 		repos, err := f.GetFiveMReposForUser(user, append(f.Config.IgnoredRepos, user.IgnoredRepos...))
 		if err != nil {
 			return al, err
