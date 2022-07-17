@@ -22,7 +22,6 @@ func init() {
 func ParseFlags() {
 	flag.BoolVar(&Verbose, "verbose", false, "Enable verbose logging")
 	flag.StringVar(&ConfigPath, "config", "config.yaml", "Path to config.yaml")
-	flag.StringVar(&ConfigPath, "config", "config.yaml", "Path to config.yaml")
 	flag.StringVar(&OutputPath, "output", "awesome.md", "Path to output markdown file")
 	flag.Parse()
 }
