@@ -103,15 +103,33 @@ func (f *fetcher) GetFiveMReposForUser(user config.User, ignoreList utils.String
 	return userRepositories, nil
 }
 
+func (f *fetcher) GetDistinctUsers() config.UserList {
+	var distinctUsers config.UserList
+	for _, user := range f.Config.Users {
+		if distinctUsers.Contains(user) {
+			log.Warnln("Duplicate user found with Username: " + user.Name)
+			continue
+		}
+		distinctUsers = append(distinctUsers, user)
+	}
+
+	return distinctUsers
+}
+
 func (f *fetcher) Fetch() (models.AwesomeList, error) {
+	distinctUsers := f.GetDistinctUsers()
 	al := models.AwesomeList{
 		Users: []models.User{},
 	}
-	for _, user := range f.Config.Users {
+	for _, user := range distinctUsers {
 		log.Infoln("Fetching repos for user: " + user.Name)
 		repos, err := f.GetFiveMReposForUser(user, append(f.Config.IgnoredRepos, user.IgnoredRepos...))
 		if err != nil {
 			return al, err
+		}
+		if len(repos) == 0 {
+			log.Warnln("User with Username: " + user.Name + " has 0 repositories")
+			continue
 		}
 		al.Users = append(al.Users, models.User{
 			Name:         user.Name,

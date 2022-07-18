@@ -11,5 +11,16 @@ type Config struct {
 	MinStars        int      `yaml:"minStars"`
 	MinStarsForFork int      `yaml:"minStarsForFork"`
 	IgnoredRepos    []string `yaml:"ignoredRepos"`
-	Users           []User   `yaml:"users"`
+	Users           UserList `yaml:"users"`
+}
+
+type UserList []User
+
+func (ul UserList) Contains(u User) bool {
+	for _, user := range ul {
+		if user.Name == u.Name {
+			return true
+		}
+	}
+	return false
 }
