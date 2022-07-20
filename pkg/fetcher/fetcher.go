@@ -2,15 +2,29 @@ package fetcher
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
+
 	"github.com/google/go-github/v45/github"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/config"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/models"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/utils"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
-	"os"
-	"strings"
 )
+
+type FilterType int64
+
+const (
+	Inclusion FilterType = iota
+	Exclusion
+)
+
+type RepoFilter struct {
+	Repos utils.StringList
+	Type  FilterType
+}
 
 type Fetcher interface {
 	Fetch() (models.AwesomeList, error)
@@ -55,20 +69,28 @@ func (f *fetcher) GetGithubReposForUsername(user string) ([]*github.Repository, 
 	return allRepos, nil
 }
 
-func (f *fetcher) GetFiveMReposForUser(user config.User, ignoreList utils.StringList) ([]models.Repository, error) {
+func (f *fetcher) GetFiveMReposForUser(user config.User, filter RepoFilter) ([]models.Repository, error) {
 	var userRepositories []models.Repository
 	repos, err := f.GetGithubReposForUsername(user.Name)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println(filter.Repos)
 	for _, repo := range repos {
-		if *repo.Private || *repo.StargazersCount < f.Config.MinStars || *repo.Disabled {
+		if *repo.Private || *repo.StargazersCount < f.Config.MinStars || *repo.Disabled || *repo.Name == user.Name {
 			continue
 		}
-		if ignoreList.Contains(*repo.Name) || *repo.Name == user.Name {
-			continue
+		switch filter.Type {
+		case Exclusion:
+			if filter.Repos.Contains(*repo.Name) {
+				continue
+			}
+		case Inclusion:
+			if !filter.Repos.Contains(*repo.Name) {
+				continue
+			}
 		}
+
 		repoObject := models.Repository{
 			Name: *repo.Name,
 			URL:  *repo.HTMLURL,
@@ -123,7 +145,15 @@ func (f *fetcher) Fetch() (models.AwesomeList, error) {
 	}
 	for _, user := range distinctUsers {
 		log.Infoln("Fetching repos for user: " + user.Name)
-		repos, err := f.GetFiveMReposForUser(user, append(f.Config.IgnoredRepos, user.IgnoredRepos...))
+		var filter RepoFilter
+		if len(user.IncludeRepos) != 0 {
+			filter.Type = Inclusion
+			filter.Repos = user.IncludeRepos
+		} else {
+			filter.Type = Exclusion
+			filter.Repos = append(f.Config.ExcludeRepos, user.ExcludeRepos...)
+		}
+		repos, err := f.GetFiveMReposForUser(user, filter)
 		if err != nil {
 			return al, err
 		}
