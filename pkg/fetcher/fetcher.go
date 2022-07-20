@@ -2,7 +2,6 @@ package fetcher
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strings"
 
@@ -75,7 +74,6 @@ func (f *fetcher) GetFiveMReposForUser(user config.User, filter RepoFilter) ([]m
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(filter.Repos)
 	for _, repo := range repos {
 		if *repo.Private || *repo.StargazersCount < f.Config.MinStars || *repo.Disabled || *repo.Name == user.Name {
 			continue
