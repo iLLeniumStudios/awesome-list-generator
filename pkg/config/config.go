@@ -9,6 +9,7 @@ type User struct {
 
 type Config struct {
 	Prefix          string   `yaml:"prefix"`
+	NumWorkers      int      `yaml:"numWorkers"`
 	MinStars        int      `yaml:"minStars"`
 	MinStarsForFork int      `yaml:"minStarsForFork"`
 	ExcludeRepos    []string `yaml:"excludeRepos"`

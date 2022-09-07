@@ -2,6 +2,9 @@ package fetcher
 
 import (
 	"context"
+
+	"github.com/gammazero/workerpool"
+
 	"os"
 	"strings"
 
@@ -137,32 +140,46 @@ func (f *fetcher) GetDistinctUsers() config.UserList {
 }
 
 func (f *fetcher) Fetch() (models.AwesomeList, error) {
+	wp := workerpool.New(f.Config.NumWorkers)
+	count := 0
 	distinctUsers := f.GetDistinctUsers()
+	returnedUsers := make(chan models.User, len(distinctUsers))
 	al := models.AwesomeList{
 		Users: []models.User{},
 	}
+
 	for _, user := range distinctUsers {
-		log.Infoln("Fetching repos for user: " + user.Name)
-		var filter RepoFilter
-		if len(user.IncludeRepos) != 0 {
-			filter.Type = Inclusion
-			filter.Repos = user.IncludeRepos
-		} else {
-			filter.Type = Exclusion
-			filter.Repos = append(f.Config.ExcludeRepos, user.ExcludeRepos...)
-		}
-		repos, err := f.GetFiveMReposForUser(user, filter)
-		if err != nil {
-			return al, err
-		}
-		if len(repos) == 0 {
-			log.Warnln("User with Username: " + user.Name + " has 0 repositories")
-			continue
-		}
-		al.Users = append(al.Users, models.User{
-			Name:         user.Name,
-			Repositories: repos,
+		user := user
+		wp.Submit(func() {
+			log.Infoln("Fetching repos for user: " + user.Name)
+			var filter RepoFilter
+			if len(user.IncludeRepos) != 0 {
+				filter.Type = Inclusion
+				filter.Repos = user.IncludeRepos
+			} else {
+				filter.Type = Exclusion
+				filter.Repos = append(f.Config.ExcludeRepos, user.ExcludeRepos...)
+			}
+			repos, err := f.GetFiveMReposForUser(user, filter)
+			if err != nil {
+				panic(err)
+			}
+			if len(repos) == 0 {
+				log.Warnln("User with Username: " + user.Name + " has 0 repositories")
+			} else {
+				count += 1
+				returnedUsers <- models.User{
+					Name:         user.Name,
+					Repositories: repos,
+				}
+			}
 		})
+	}
+
+	wp.StopWait()
+
+	for i := 0; i < count; i++ {
+		al.Users = append(al.Users, <-returnedUsers)
 	}
 
 	return al, nil
