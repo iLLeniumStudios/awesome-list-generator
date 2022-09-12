@@ -2,10 +2,12 @@ package fetcher
 
 import (
 	"context"
+	"time"
 
 	"github.com/gammazero/workerpool"
 
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/v45/github"
@@ -60,6 +62,13 @@ func (f *fetcher) GetGithubReposForUsername(user string) ([]*github.Repository, 
 	for {
 		repos, resp, err := f.Client.Repositories.List(context.Background(), user, opts)
 		if err != nil {
+			afterString := resp.Header.Get("Retry-After")
+			if afterString != "" {
+				after, _ := strconv.Atoi(afterString)
+				log.Warnln("Secondary Rate Limit Exceeded. Waiting: " + afterString + " seconds")
+				time.Sleep(time.Duration(after) * time.Second)
+				continue
+			}
 			return nil, err
 		}
 		allRepos = append(allRepos, repos...)
@@ -105,10 +114,23 @@ func (f *fetcher) GetFiveMReposForUser(user config.User, filter RepoFilter) ([]m
 				continue
 			}
 			splitted := strings.Split(*fullRepo.Parent.Owner.HTMLURL, "/")
-			comparison, _, err := f.Client.Repositories.CompareCommits(context.Background(), user.Name, *repo.Name, *fullRepo.DefaultBranch, splitted[len(splitted)-1]+":"+*fullRepo.Parent.DefaultBranch, nil)
-			if err != nil {
-				panic(err)
+			var comparison *github.CommitsComparison
+			for {
+				var resp *github.Response
+				comparison, resp, err = f.Client.Repositories.CompareCommits(context.Background(), user.Name, *repo.Name, *fullRepo.DefaultBranch, splitted[len(splitted)-1]+":"+*fullRepo.Parent.DefaultBranch, nil)
+				if err != nil {
+					afterString := resp.Header.Get("Retry-After")
+					if afterString != "" {
+						after, _ := strconv.Atoi(afterString)
+						log.Warnln("Secondary Rate Limit Exceeded. Waiting: " + afterString + " seconds")
+						time.Sleep(time.Duration(after) * time.Second)
+						continue
+					}
+					panic(err)
+				}
+				break
 			}
+
 			repoObject.Fork = &models.Fork{
 				Owner:    *fullRepo.Parent.Owner.Login,
 				Name:     *fullRepo.Parent.Name,
