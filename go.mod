@@ -3,6 +3,7 @@ module github.com/iLLeniumStudios/awesome-list-generator
 go 1.18
 
 require (
+	github.com/gammazero/workerpool v1.1.3
 	github.com/google/go-github/v45 v45.2.0
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92
@@ -11,7 +12,6 @@ require (
 
 require (
 	github.com/gammazero/deque v0.2.0 // indirect
-	github.com/gammazero/workerpool v1.1.3 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect

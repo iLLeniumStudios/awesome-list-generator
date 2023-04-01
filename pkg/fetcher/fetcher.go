@@ -102,8 +102,16 @@ func (f *fetcher) GetFiveMReposForUser(user config.User, filter RepoFilter) ([]m
 		}
 
 		repoObject := models.Repository{
-			Name: *repo.Name,
-			URL:  *repo.HTMLURL,
+			Owner:       user.Name,
+			Name:        *repo.Name,
+			URL:         *repo.HTMLURL,
+			Stars:       *repo.StargazersCount,
+			Tags:        repo.Topics,
+			LastPushed:  repo.GetPushedAt(),
+			LastUpdated: repo.GetUpdatedAt(),
+			Forks:       repo.GetForksCount(),
+			OpenIssues:  repo.GetOpenIssuesCount(),
+			Archived:    repo.GetArchived(),
 		}
 		if *repo.Fork && !user.SkipForks {
 			if *repo.StargazersCount < f.Config.MinStarsForFork {
