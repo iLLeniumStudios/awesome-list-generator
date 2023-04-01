@@ -13,6 +13,7 @@ import (
 var ConfigPath string
 var OutputPath string
 var Verbose bool
+var OutputFormat string
 
 func init() {
 	ParseFlags()
@@ -23,6 +24,7 @@ func ParseFlags() {
 	flag.BoolVar(&Verbose, "verbose", false, "Enable verbose logging")
 	flag.StringVar(&ConfigPath, "config", "config.yaml", "Path to config.yaml")
 	flag.StringVar(&OutputPath, "output", "awesome.md", "Path to output markdown file")
+	flag.StringVar(&OutputFormat, "output-format", "markdown", "Output file format. Valid values: (markdown, json)")
 	flag.Parse()
 }
 
@@ -65,7 +67,7 @@ func main() {
 	}
 
 	gen := generator.New(Config)
-	err = gen.Generate(al, OutputPath)
+	err = gen.Generate(al, OutputPath, OutputFormat)
 	if err != nil {
 		panic(err)
 	}

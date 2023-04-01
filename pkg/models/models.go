@@ -1,6 +1,10 @@
 package models
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/google/go-github/v45/github"
+)
 
 type Fork struct {
 	Owner    string
@@ -11,10 +15,18 @@ type Fork struct {
 }
 
 type Repository struct {
+	Owner       string
 	Name        string
-	Description *string
+	Description *string `json:",omitempty"`
 	URL         string
-	Fork        *Fork
+	Fork        *Fork    `json:",omitempty"`
+	Tags        []string `json:",omitempty"`
+	Stars       int
+	LastUpdated github.Timestamp
+	LastPushed  github.Timestamp
+	Forks       int
+	OpenIssues  int
+	Archived    bool
 }
 
 type User struct {

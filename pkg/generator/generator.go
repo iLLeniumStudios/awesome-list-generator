@@ -1,15 +1,18 @@
 package generator
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/config"
 	"github.com/iLLeniumStudios/awesome-list-generator/pkg/models"
+	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
 )
 
 type Generator interface {
-	Generate(al models.AwesomeList, outputPath string) error
+	Generate(al models.AwesomeList, outputPath string, outputFormat string) error
 }
 
 type generator struct {
@@ -22,12 +25,20 @@ func New(conf *config.Config) Generator {
 	}
 }
 
-func (g *generator) Generate(al models.AwesomeList, outputPath string) error {
+func (g *generator) generateJSON(al models.AwesomeList, outputPath string) error  {
+	var allRepos []models.Repository
+	for _, user := range al.Users {
+		allRepos = append(allRepos, user.Repositories...)
+	}
+	file, _ := json.MarshalIndent(allRepos, "", "\t")
+	return ioutil.WriteFile(outputPath, file, 0644)
+}
+
+func (g *generator) generateMarkdown(al models.AwesomeList, outputPath string) error {
 	f, err := os.Create(outputPath)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
 	sort.Sort(al.Users)
 
 	f.WriteString(g.Config.Prefix)
@@ -52,4 +63,16 @@ func (g *generator) Generate(al models.AwesomeList, outputPath string) error {
 	}
 
 	return nil
+}
+
+func (g *generator) Generate(al models.AwesomeList, outputPath string, outputFormat string) error {
+
+	switch outputFormat {
+	case "markdown":
+		return g.generateMarkdown(al, outputPath)
+	case "json":
+		return g.generateJSON(al, outputPath)
+	default:
+		return errors.New("invalid output format")
+	}
 }
