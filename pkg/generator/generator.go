@@ -3,12 +3,14 @@ package generator
 import (
 	"encoding/json"
 	"errors"
-	"github.com/iLLeniumStudios/awesome-list-generator/pkg/config"
-	"github.com/iLLeniumStudios/awesome-list-generator/pkg/models"
 	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
+
+	"github.com/iLLeniumStudios/awesome-list-generator/pkg/config"
+	"github.com/iLLeniumStudios/awesome-list-generator/pkg/models"
+	"github.com/iLLeniumStudios/awesome-list-generator/pkg/sorters"
 )
 
 type Generator interface {
@@ -25,9 +27,12 @@ func New(conf *config.Config) Generator {
 	}
 }
 
-func (g *generator) generateJSON(al models.AwesomeList, outputPath string) error  {
+func (g *generator) generateJSON(al models.AwesomeList, outputPath string) error {
 	var allRepos []models.Repository
+	sort.Sort(sorters.UserNameSorter(al.Users))
+
 	for _, user := range al.Users {
+		sort.Sort(sorters.RepositoryNameSorter(user.Repositories))
 		allRepos = append(allRepos, user.Repositories...)
 	}
 	file, _ := json.MarshalIndent(allRepos, "", "\t")
